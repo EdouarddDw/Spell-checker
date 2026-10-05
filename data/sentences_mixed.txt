@@ -1,0 +1,21 @@
+# PLACEHOLDER sentences (mixed) - replace this whole file with your own writing, one sentence per line.
+J'ai un meeting à quatorze heures, so I can't join you for lunch.
+Can you send me the slides avant la réunion de demain matin ?
+Le deadline est vendredi, but I think we can finish earlier.
+I talked to the manager et elle est d'accord avec notre proposition.
+On se retrouve au café, then we can walk to the office together.
+The server is down again, il faut redémarrer la machine tout de suite.
+Merci pour ton message, I will call you back après le déjeuner.
+She said the report is ready, mais il manque encore les chiffres de février.
+Je dois push my changes before the review, sinon ça va bloquer les autres.
+We need septante chairs for the event, et aussi quelques tables.
+Tu peux regarder tes mails, I sent you the file this morning.
+The weather is lovely today, on pourrait manger dehors à midi.
+Il m'a dit que their flight was delayed à cause de la neige.
+I forgot my badge à la maison, so I had to wait at the reception.
+Ce bug est vraiment étrange, it only happens when the cache is empty.
+Let me know si tu as besoin d'aide pour préparer la présentation.
+Les tests passent en local, but the pipeline still fails on the server.
+My sister lives in Lausanne et elle travaille à l'hôpital depuis trois ans.
+Bonne nouvelle, the client accepted our offer sans demander de réduction.
+I'll be there in ten minutes, garde-moi une place près de la fenêtre.
