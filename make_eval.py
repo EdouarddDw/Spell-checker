@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import unicodedata
 from collections import Counter
 from functools import partial
@@ -264,6 +265,107 @@ def dropped_plural(word: str, rng: random.Random) -> str | None:
 
 
 # --------------------------------------------------------------------------
+# Phonetic spellings: the word written the way it sounds, by someone who does
+# not know how it is spelled. Unlike a typo, the result can be several letters
+# away from the real word.
+# --------------------------------------------------------------------------
+
+MIN_PHONETIC_LETTERS = 4
+_V = "aeiouyéèêàâîôû"  # French vowels
+_C = "b-df-hj-np-tv-xz"  # consonants
+
+# (pattern, replacement) pairs, applied to the lowercased word.
+# Safe in both languages, so these are the only ones used in mixed sentences.
+SHARED_PHONETIC = (
+    (r"ph", "f"),  # pharmacy -> farmacy
+    (r"([bdfmnprt])\1", r"\1"),  # arrivés -> arivés, offer -> ofer
+    (r"(?<!s)tion", "sion"),  # attention -> attension
+    (rf"(?<=[{_C}])y(?=[{_C}])", "i"),  # system -> sistem
+)
+
+EN_PHONETIC = (
+    (r"tion\b", "shun"),  # station -> stashun
+    (r"(?<!e)ight", "ite"),  # night -> nite
+    (r"ck", "k"),  # back -> bak
+    (r"\bwh(?=[aeiy])", "w"),  # which -> wich
+    (r"\bwr", "r"),  # wrong -> rong
+    (r"(?<=\w)ie(?=\w)", "ei"),  # friend -> freind
+    (r"(?<=\w)ei(?=\w)", "ie"),  # their -> thier
+    (rf"(?<=[{_C}])le\b", "el"),  # people -> peopel
+    (r"ous\b", "us"),  # famous -> famus
+    (r"(?<!s)c(?=[eiy])", "s"),  # decision -> desision
+    (r"ould\b", "ood"),  # would -> wood
+    (r"ee(?=\w)", "ea"),  # weekend -> weakend
+    (r"ful\b", "full"),  # careful -> carefull
+    (r"(?<=\w\w)ence\b", "ance"),  # experience -> experiance
+    (r"(?<=\w\w)ance\b", "ence"),  # distance -> distence
+    (r"(?<=\w{3})ent\b", "ant"),  # student -> studant
+    (r"qu", "kw"),  # question -> kwestion
+    (r"(?<=\w)x", "ks"),  # next -> nekst
+    (r"([ls])\1", r"\1"),  # really -> realy, passport -> pasport
+)
+
+FR_PHONETIC = (
+    (r"eau", "o"),  # bateau -> bato
+    (r"(?<!e)au", "o"),  # aussi -> ossi
+    (r"qu", "k"),  # quand -> kand
+    (rf"(?<=[{_V}])ç", "ss"),  # reçu -> ressu
+    (rf"(?<![{_V}])ç", "s"),  # garçon -> garson
+    (rf"(?<=[{_V}])c(?=[eiyéèê])", "ss"),  # décidé -> déssidé
+    (rf"(?<![{_V}s])c(?=[eiyéèê])", "s"),  # merci -> mersi
+    (r"ai(?![lmn]|ent\b)", "è"),  # maison -> mèson
+    (r"(?<=\w)(ais|ait|aient)\b", "é"),  # avait -> avé
+    (r"ei(?![ln])", "è"),  # neige -> nège
+    (r"(?<![iéy])en(?=[cdfstv]\w)", "an"),  # pendant -> pandant
+    (r"(?<!i)an(?=[cdgst]\w)", "en"),  # vacances -> vacences
+    (r"\bh", ""),  # hier -> ier
+    (r"(?<=\w\w[aiouéèôûrn])(?<!en)[td]\b", ""),  # petit -> peti, grand -> gran
+    (r"(?<=\w\wu)x\b", ""),  # mieux -> mieu
+    (r"(?:(?<=[ae])|(?<=[eo]u))ill", "y"),  # travaille -> travaye
+    (r"(?<!g)g(?=[eéèêi])", "j"),  # manger -> manjer
+    (rf"(?<=[{_V}])s(?=[{_V}])", "z"),  # cuisine -> cuizine
+    (rf"(ain|ein)(?![{_V}])", "in"),  # demain -> demin
+    (r"th", "t"),  # bibliothèque -> bibliotèque
+    (r"(?<!i)ll", "l"),  # nouvelle -> nouvele
+)
+
+
+def _compile(rules):
+    return tuple((re.compile(pattern), repl) for pattern, repl in rules)
+
+
+PHONETIC_RULES = {
+    "en": _compile(SHARED_PHONETIC + EN_PHONETIC),
+    "fr": _compile(SHARED_PHONETIC + FR_PHONETIC),
+    "mixed": _compile(SHARED_PHONETIC),
+}
+
+
+def _phonetic_variants(word: str, rules) -> list[str]:
+    """Every spelling one rule application away from `word`."""
+    variants = {
+        word[: m.start()] + m.expand(repl) + word[m.end() :]
+        for pattern, repl in rules
+        for m in pattern.finditer(word)
+    }
+    return sorted(variants - {word})
+
+
+def phonetic(word: str, rng: random.Random, rules) -> str | None:
+    """Respell one or two sounds of the word the way they are heard."""
+    low = word.lower()
+    if sum(ch.isalpha() for ch in word) < MIN_PHONETIC_LETTERS or word[1:] != low[1:]:
+        return None
+    new = low
+    for _ in range(rng.choice((1, 2))):
+        options = [v for v in _phonetic_variants(new, rules) if v != low]
+        if not options:
+            break
+        new = rng.choice(options)
+    return match_case(word, new) if new != low else None
+
+
+# --------------------------------------------------------------------------
 # Building examples
 # --------------------------------------------------------------------------
 
@@ -275,6 +377,7 @@ def corruptions_for(lang: str, layout: str) -> dict:
         "transposition": transposition,
         "deletion": deletion,
         "doubled_letter": doubled_letter,
+        "phonetic": partial(phonetic, rules=PHONETIC_RULES[lang]),
     }
     if lang in ("en", "mixed"):
         table["en_confusion"] = en_confusion

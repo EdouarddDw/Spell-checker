@@ -69,6 +69,7 @@ Each corrupted sentence gets 1 to 3 errors, one word each. Error types:
 | `transposition` | all | the → teh |
 | `deletion` | all | rain → rin |
 | `doubled_letter` | all | than → thhan |
+| `phonetic` | all | written as it sounds: would → wood, pharmacy → farmasy, quand → kan, maison → mèzon |
 | `en_confusion` | en, mixed | their/there/they're, your/you're, its/it's, then/than, from/form, lose/loose |
 | `accent_strip` | fr, mixed | oublié → oublie |
 | `accent_swap` | fr, mixed | élève → éléve |
@@ -89,6 +90,13 @@ Known limits: there is no part-of-speech tagging, so `verb_ending` and
 is still a misspelling with one obvious correction). In mixed sentences,
 `verb_ending` is off and `a`/`on`/`son` are never swapped, because the script
 cannot tell which words are English.
+
+`phonetic` rewrites one or two sounds of a word (at least 4 letters) with fixed
+spelling rules, not a pronunciation dictionary, so it only approximates what a
+writer who does not know the word would produce. The result is sometimes
+another real word (would → wood, sont → son). Mixed sentences use only the few
+rules that hold in both languages (ph → f, single for double consonant,
+-tion → -sion, y → i).
 
 ## 2. Run the baseline
 

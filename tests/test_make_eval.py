@@ -148,6 +148,38 @@ def test_dropped_plural():
     assert me.dropped_plural("maison", rng()) is None
 
 
+# ---- phonetic ------------------------------------------------------------
+
+
+def _phonetic(word, lang):
+    return {me.phonetic(word, rng(s), me.PHONETIC_RULES[lang]) for s in SEEDS}
+
+
+def test_phonetic_respells_sounds():
+    assert _phonetic("pharmacy", "en") == {"farmacy", "pharmasy", "farmasy"}
+    assert _phonetic("would", "en") == {"wood"}
+    assert _phonetic("quand", "fr") == {"kand", "quan", "kan"}
+    assert _phonetic("bateau", "fr") == {"bato"}
+
+
+def test_phonetic_keeps_case_and_apostrophes():
+    assert _phonetic("Their", "en") == {"Thier"}
+    assert _phonetic("Hier", "fr") == {"Ier"}
+    assert _phonetic("l'hôpital", "fr") == {"l'ôpital"}
+
+
+def test_phonetic_skips_short_words_acronyms_and_words_without_a_rule():
+    assert _phonetic("the", "en") == {None}
+    assert _phonetic("NASA", "en") == {None}
+    assert _phonetic("lunch", "en") == {None}
+
+
+def test_phonetic_in_mixed_uses_only_rules_valid_in_both_languages():
+    assert _phonetic("beautiful", "mixed") == {None}  # the French eau -> o must not apply
+    assert _phonetic("would", "mixed") == {None}
+    assert _phonetic("proposition", "mixed") == {"proposision"}
+
+
 # ---- whole examples ------------------------------------------------------
 
 
